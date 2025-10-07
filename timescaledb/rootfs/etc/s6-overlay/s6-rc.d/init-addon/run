@@ -31,6 +31,8 @@ initializeDataDirectory () {
 	
 	# Set Password protect IPv4 hosts by default
 	echo "host    all             all             0.0.0.0/0               md5" >> ${POSTGRES_DATA}/pg_hba.conf
+	# Set Password protect IPv6 hosts by default
+	echo "host    all             all             ::/0                    md5" >> ${POSTGRES_DATA}/pg_hba.conf
 	echo "local    all             all                                    md5" >> ${POSTGRES_DATA}/pg_hba.conf
 	echo "local    all             all                                   peer" >> ${POSTGRES_DATA}/pg_hba.conf
 	# Set Listen on all addresses (*)
