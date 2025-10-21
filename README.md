@@ -142,6 +142,179 @@ local   all             all             0.0.0.0/0               peer"
 Please review this configuration carefully by examine the docs:
 https://www.postgresql.org/docs/devel/auth-pg-hba-conf.html
 
+## Advanced Configuration
+
+### PostgreSQL Configuration
+
+#### Option: `postgresql_config`
+
+Allows you to customize PostgreSQL server parameters. These settings are applied to `postgresql.conf` and can override default settings configured by the addon.
+
+**Example:**
+
+```yaml
+postgresql_config:
+  log_statement: "all"
+  log_min_duration_statement: "1000"  # Log queries taking > 1 second
+  work_mem: "16MB"
+  maintenance_work_mem: "256MB"
+  effective_cache_size: "4GB"
+  random_page_cost: "1.1"
+  checkpoint_completion_target: "0.9"
+```
+
+See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/runtime-config.html) for all available parameters and their meanings.
+
+**Important Notes:**
+
+- Configuration changes require a restart of the addon to take effect
+- Some critical parameters cannot be modified (e.g., `shared_preload_libraries`, `port`, `data_directory`) as they are managed by the addon
+- Invalid parameter names or values will be logged and skipped
+- Parameters are applied after TimescaleDB tuning, so you can override tuned values if needed
+
+**Common Use Cases:**
+
+**Performance Tuning:**
+```yaml
+postgresql_config:
+  work_mem: "32MB"
+  maintenance_work_mem: "512MB"
+  effective_cache_size: "8GB"
+```
+
+**Query Logging for Debugging:**
+```yaml
+postgresql_config:
+  log_statement: "all"
+  log_duration: "on"
+  log_min_duration_statement: "500"
+```
+
+**Connection Settings:**
+```yaml
+postgresql_config:
+  idle_in_transaction_session_timeout: "60000"
+  statement_timeout: "30000"
+```
+
+#### Option: `pg_hba_config`
+
+Allows you to add custom authentication rules to `pg_hba.conf`. These rules control which hosts can connect to the database and how they authenticate.
+
+**Example:**
+
+```yaml
+pg_hba_config:
+  # Allow specific subnet with password authentication
+  - type: "host"
+    database: "homeassistant"
+    user: "all"
+    address: "192.168.1.0/24"
+    method: "md5"
+  
+  # Require SSL for remote admin connections
+  - type: "hostssl"
+    database: "all"
+    user: "admin"
+    address: "0.0.0.0/0"
+    method: "scram-sha-256"
+  
+  # Reject specific user from connecting
+  - type: "host"
+    database: "all"
+    user: "guest"
+    address: "0.0.0.0/0"
+    method: "reject"
+  
+  # Allow local connections without password for specific user
+  - type: "local"
+    database: "all"
+    user: "backup"
+    method: "trust"
+```
+
+**Rule Format:**
+
+- `type`: Connection type - `local` (Unix socket), `host` (TCP/IP), `hostssl` (TCP/IP with SSL), `hostnossl` (TCP/IP without SSL)
+- `database`: Database name or `all` for all databases
+- `user`: Username or `all` for all users
+- `address`: CIDR address (required for non-local types, e.g., `192.168.1.0/24` or `0.0.0.0/0`)
+- `method`: Authentication method - `md5`, `scram-sha-256`, `trust`, `reject`, `peer`, `ident`, etc.
+- `options`: Optional authentication options (e.g., `clientcert=verify-full`)
+
+See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/auth-pg-hba-conf.html) for complete details on authentication methods.
+
+**Important Notes:**
+
+- Custom rules are **appended** to the default rules (not replaced)
+- Default rules remain in place to ensure basic connectivity
+- Rules are evaluated in order - the first matching rule is used
+- Invalid rules will be logged and skipped
+- Changes require a restart of the addon to take effect
+
+**⚠️ Warning:** Incorrect `pg_hba.conf` configuration can lock you out of the database. Always ensure you have at least one working authentication rule before adding restrictions.
+
+**Common Use Cases:**
+
+**Restrict access to specific network:**
+```yaml
+pg_hba_config:
+  - type: "host"
+    database: "all"
+    user: "all"
+    address: "192.168.1.0/24"
+    method: "md5"
+  - type: "host"
+    database: "all"
+    user: "all"
+    address: "0.0.0.0/0"
+    method: "reject"
+```
+
+**Require SSL for all external connections:**
+```yaml
+pg_hba_config:
+  - type: "hostssl"
+    database: "all"
+    user: "all"
+    address: "0.0.0.0/0"
+    method: "scram-sha-256"
+  - type: "hostnossl"
+    database: "all"
+    user: "all"
+    address: "0.0.0.0/0"
+    method: "reject"
+```
+
+**Allow passwordless local backup user:**
+```yaml
+pg_hba_config:
+  - type: "local"
+    database: "all"
+    user: "backup_user"
+    method: "peer"
+```
+
+### Migration from `init_commands`
+
+If you're currently using `init_commands` to modify PostgreSQL configuration, you can migrate to the new declarative approach:
+
+**Old way (still works):**
+```yaml
+init_commands:
+  - 'sed -i -e "/log_statement =/ s/= .*/= '\''all'\''/" /data/postgres/postgresql.conf'
+  - 'sed -i -e "/work_mem =/ s/= .*/= '\''32MB'\''/" /data/postgres/postgresql.conf'
+```
+
+**New way (recommended):**
+```yaml
+postgresql_config:
+  log_statement: "all"
+  work_mem: "32MB"
+```
+
+The new approach is simpler, safer, and easier to maintain. The `init_commands` option remains available for advanced use cases that aren't covered by the declarative configuration.
+
 ### Now what..
 
 Well.. Dive in!

@@ -94,6 +94,40 @@ Basically this will try to find the old database-files from Postgres 12, and res
 
 !! Please don't set this if you don't know what you are doing or before taking a backup. !!
 
+#### Option: `postgresql_config`
+
+Allows you to customize PostgreSQL server parameters. These settings are applied to `postgresql.conf` and can override default settings.
+
+Example:
+```yaml
+postgresql_config:
+  log_statement: "all"
+  work_mem: "16MB"
+  maintenance_work_mem: "256MB"
+```
+
+See [PostgreSQL documentation](https://www.postgresql.org/docs/current/runtime-config.html) for available parameters.
+
+**Note:** Some critical parameters cannot be modified (e.g., `shared_preload_libraries`, `port`, `data_directory`) as they are managed by the addon.
+
+#### Option: `pg_hba_config`
+
+Allows you to add custom authentication rules to `pg_hba.conf`. Rules are appended to default rules.
+
+Example:
+```yaml
+pg_hba_config:
+  - type: "host"
+    database: "homeassistant"
+    user: "all"
+    address: "192.168.1.0/24"
+    method: "md5"
+```
+
+See [PostgreSQL documentation](https://www.postgresql.org/docs/current/auth-pg-hba-conf.html) for authentication methods.
+
+**Warning:** Incorrect configuration can lock you out of the database.
+
 ### Running the container standalone.
 
 In this case, you need to have a working Docker installation on your machine.
