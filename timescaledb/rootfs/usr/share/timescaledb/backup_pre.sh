@@ -19,6 +19,11 @@ if pg_isready -U postgres -h localhost -p 5432 >/dev/null 2>&1; then
         rm -f "${BACKUP_FILE}"
     fi
     
+    # Create an empty file with proper ownership first
+    touch "${BACKUP_FILE}"
+    chown postgres:postgres "${BACKUP_FILE}"
+    chmod 600 "${BACKUP_FILE}"
+    
     # Create the SQL dump
     if su - postgres -c "pg_dumpall -U postgres --clean --if-exists -f ${BACKUP_FILE}"; then
         bashio::log.info "Database dump created successfully at ${BACKUP_FILE}"
@@ -32,7 +37,6 @@ if pg_isready -U postgres -h localhost -p 5432 >/dev/null 2>&1; then
         bashio::log.info "Backup file size: ${BACKUP_SIZE}"
     else
         bashio::log.error "Failed to create database dump!"
-        # Don't fail the backup process, just log the error
         exit 1
     fi
 else
