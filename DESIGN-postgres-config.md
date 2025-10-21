@@ -16,6 +16,7 @@ init_commands:
 ```
 
 **Problems with this approach:**
+
 - Requires shell scripting knowledge
 - Error-prone (sed syntax, regex, escaping)
 - Not validated
@@ -33,7 +34,7 @@ init_commands:
 
 ### Design Principles
 
-1. **Declarative Configuration**: Users specify *what* they want, not *how* to do it
+1. **Declarative Configuration**: Users specify _what_ they want, not _how_ to do it
 2. **Type Safety**: Configuration is validated by Home Assistant schema
 3. **User-Friendly**: Simple YAML, no shell scripting required
 4. **Safe**: Prevent modification of critical settings
@@ -48,12 +49,14 @@ init_commands:
 Allows users to set or override PostgreSQL configuration parameters in `postgresql.conf`.
 
 **Schema:**
+
 ```yaml
 postgresql_config:
   parameter_name: "value"
 ```
 
 **Example:**
+
 ```yaml
 postgresql_config:
   log_statement: "all"
@@ -66,6 +69,7 @@ postgresql_config:
 ```
 
 **Validation:**
+
 - Keys must be valid PostgreSQL parameter names (string validation)
 - Values are treated as strings (PostgreSQL handles type validation)
 - Certain critical parameters are forbidden (see Safety section)
@@ -75,17 +79,19 @@ postgresql_config:
 Allows users to append custom authentication rules to `pg_hba.conf`.
 
 **Schema:**
+
 ```yaml
 pg_hba_config:
   - type: "host|local|hostssl|hostnossl"
     database: "database_name"
     user: "username"
-    address: "CIDR_address"  # Optional, not used for 'local'
+    address: "CIDR_address" # Optional, not used for 'local'
     method: "md5|trust|reject|scram-sha-256|etc"
-    options: "key=value"     # Optional
+    options: "key=value" # Optional
 ```
 
 **Example:**
+
 ```yaml
 pg_hba_config:
   # Allow specific subnet with password
@@ -94,14 +100,14 @@ pg_hba_config:
     user: "all"
     address: "192.168.1.0/24"
     method: "md5"
-  
+
   # Require SSL for remote connections
   - type: "hostssl"
     database: "all"
     user: "admin"
     address: "0.0.0.0/0"
     method: "scram-sha-256"
-  
+
   # Reject specific user
   - type: "host"
     database: "all"
@@ -111,12 +117,14 @@ pg_hba_config:
 ```
 
 **Validation:**
+
 - `type` must be one of: host, local, hostssl, hostnossl
 - `database` and `user` are required strings
 - `address` is required for non-local types
 - `method` must be a valid authentication method
 
 **Behavior:**
+
 - Custom rules are **appended** to the default rules (not replaced)
 - Default rules remain in place for safety
 - Rules are applied in order (first match wins in pg_hba.conf)
@@ -146,6 +154,7 @@ timescaledb/
 #### New Script: `003_apply_user_config.sh`
 
 This helper script will:
+
 1. Read configuration from Home Assistant addon options
 2. Validate settings
 3. Apply `postgresql_config` settings to `postgresql.conf`
@@ -155,6 +164,7 @@ This helper script will:
 #### Integration Point in `init-addon/run`
 
 The configuration application will occur at the end of `init-addon/run`, after:
+
 - Data directory initialization
 - Timescaledb tuning
 - max_connections setting
@@ -182,8 +192,7 @@ options:
 schema:
   # ... existing schema ...
   postgresql_config:
-    match(^[a-z_]+$)?:
-      str
+    match(^[a-z_]+$)?: str
   pg_hba_config:
     - type: list(local|host|hostssl|hostnossl)?
       database: str?
@@ -211,6 +220,7 @@ Attempts to set these will be logged as warnings and ignored.
 #### Default pg_hba.conf Rules
 
 The default rules created by the addon are:
+
 ```
 host    all             all             0.0.0.0/0               md5
 host    all             all             ::/0                    md5
@@ -222,15 +232,13 @@ These rules are **always present** and applied before user rules. User rules can
 
 ### Error Handling
 
-1. **Invalid Configuration**: 
+1. **Invalid Configuration**:
    - Validated by Home Assistant schema before applying
    - Schema errors prevent addon from starting
-   
 2. **Invalid PostgreSQL Parameter**:
    - Logged as warning
    - Parameter is skipped
    - Addon continues to start
-   
 3. **Invalid pg_hba Rule**:
    - Logged as warning
    - Rule is skipped
@@ -254,6 +262,7 @@ All configuration changes are logged with INFO level:
 ```
 
 Warnings for skipped settings:
+
 ```
 [WARN] Skipping forbidden parameter: shared_preload_libraries
 [WARN] Skipping invalid pg_hba rule: missing required field 'database'
@@ -265,7 +274,7 @@ Warnings for skipped settings:
 
 Add new section: "Advanced Configuration"
 
-```markdown
+````markdown
 ### PostgreSQL Configuration
 
 #### Option: `postgresql_config`
@@ -273,13 +282,15 @@ Add new section: "Advanced Configuration"
 Allows you to customize PostgreSQL server parameters. These settings are applied to `postgresql.conf`.
 
 **Example:**
+
 ```yaml
 postgresql_config:
   log_statement: "all"
-  log_min_duration_statement: "1000"  # Log queries taking > 1 second
+  log_min_duration_statement: "1000" # Log queries taking > 1 second
   work_mem: "16MB"
   maintenance_work_mem: "256MB"
 ```
+````
 
 See [PostgreSQL documentation](https://www.postgresql.org/docs/current/runtime-config.html) for available parameters.
 
@@ -290,6 +301,7 @@ See [PostgreSQL documentation](https://www.postgresql.org/docs/current/runtime-c
 Allows you to add custom authentication rules to `pg_hba.conf`. Rules are appended to the default rules.
 
 **Example:**
+
 ```yaml
 pg_hba_config:
   # Allow specific subnet
@@ -298,7 +310,7 @@ pg_hba_config:
     user: "all"
     address: "192.168.1.0/24"
     method: "md5"
-  
+
   # Require SSL for admin user
   - type: "hostssl"
     database: "all"
@@ -310,7 +322,8 @@ pg_hba_config:
 See [PostgreSQL documentation](https://www.postgresql.org/docs/current/auth-pg-hba-conf.html) for authentication methods.
 
 **Warning:** Be careful with authentication rules. Incorrect configuration can lock you out of the database.
-```
+
+````
 
 ### Testing Approach
 
@@ -372,11 +385,11 @@ See [PostgreSQL documentation](https://www.postgresql.org/docs/current/auth-pg-h
   # Old way (still works)
   init_commands:
     - 'sed -i -e "/log_statement =/ s/= .*/= '\''all'\''/" /data/postgres/postgresql.conf'
-  
+
   # New way (recommended)
   postgresql_config:
     log_statement: "all"
-  ```
+````
 
 ### Future Enhancements
 
@@ -384,11 +397,8 @@ See [PostgreSQL documentation](https://www.postgresql.org/docs/current/auth-pg-h
    - Performance tuning
    - Security hardening
    - Development mode
-   
 2. **Validation Improvements**: Check parameter values against PostgreSQL docs
-   
 3. **pg_hba Management**: Allow replacing default rules (advanced option)
-   
 4. **Configuration Backup**: Automatic backup before applying changes
 
 5. **Web UI**: Integration with Home Assistant UI for easier configuration

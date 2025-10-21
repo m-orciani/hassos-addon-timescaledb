@@ -18,6 +18,7 @@ backup_exclude:
 ```
 
 These hooks ensure that:
+
 - Before backup: A SQL dump is created
 - After backup: The SQL dump is cleaned up
 - During backup: The PostgreSQL data directory is excluded (only the SQL dump is backed up)
@@ -27,6 +28,7 @@ These hooks ensure that:
 **Location:** `/usr/share/timescaledb/backup_pre.sh`
 
 **Functionality:**
+
 - Checks if PostgreSQL is running
 - Executes `pg_dumpall` to create a complete SQL dump
 - Creates the file `/data/backup_db.sql`
@@ -35,6 +37,7 @@ These hooks ensure that:
 - Gracefully handles cases where PostgreSQL isn't running
 
 **Key Features:**
+
 - Uses `pg_isready` to check PostgreSQL status
 - Runs as the postgres user
 - Includes `--clean --if-exists` flags for safe restore
@@ -45,6 +48,7 @@ These hooks ensure that:
 **Location:** `/usr/share/timescaledb/backup_post.sh`
 
 **Functionality:**
+
 - Removes the temporary SQL dump file after backup completes
 - Saves disk space
 - Logs cleanup status
@@ -54,6 +58,7 @@ These hooks ensure that:
 **Location:** `/usr/share/timescaledb/restore_from_backup.sh`
 
 **Functionality:**
+
 - Provides `restoreFromBackup()` function
 - Starts PostgreSQL temporarily
 - Waits for PostgreSQL to be ready (with timeout)
@@ -63,6 +68,7 @@ These hooks ensure that:
 - Stops PostgreSQL cleanly after restore
 
 **Key Features:**
+
 - Comprehensive error handling
 - Progress logging for user visibility
 - Retry logic with timeout for PostgreSQL startup
@@ -91,6 +97,7 @@ These hooks ensure that:
    - Preserves backup file if restore fails
 
 **New Variables:**
+
 - `BACKUP_FILE`: Path to SQL dump file
 - `RESTORE_MODE`: Flag indicating restore should occur
 
@@ -107,6 +114,7 @@ RUN chmod +x /usr/share/timescaledb/backup_pre.sh \
 ### 7. Documentation (`README.md`)
 
 Added comprehensive "Backup and Restore" section covering:
+
 - How backups work
 - How restore works
 - Manual backup procedures
@@ -196,6 +204,7 @@ Normal startup continues
 ## Future Enhancements
 
 Possible improvements:
+
 - Add configuration option for backup retention
 - Support for compressed SQL dumps
 - Incremental backup support

@@ -155,7 +155,7 @@ Allows you to customize PostgreSQL server parameters. These settings are applied
 ```yaml
 postgresql_config:
   log_statement: "all"
-  log_min_duration_statement: "1000"  # Log queries taking > 1 second
+  log_min_duration_statement: "1000" # Log queries taking > 1 second
   work_mem: "16MB"
   maintenance_work_mem: "256MB"
   effective_cache_size: "4GB"
@@ -175,6 +175,7 @@ See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/runti
 **Common Use Cases:**
 
 **Performance Tuning:**
+
 ```yaml
 postgresql_config:
   work_mem: "32MB"
@@ -183,6 +184,7 @@ postgresql_config:
 ```
 
 **Query Logging for Debugging:**
+
 ```yaml
 postgresql_config:
   log_statement: "all"
@@ -191,6 +193,7 @@ postgresql_config:
 ```
 
 **Connection Settings:**
+
 ```yaml
 postgresql_config:
   idle_in_transaction_session_timeout: "60000"
@@ -211,21 +214,21 @@ pg_hba_config:
     user: "all"
     address: "192.168.1.0/24"
     method: "md5"
-  
+
   # Require SSL for remote admin connections
   - type: "hostssl"
     database: "all"
     user: "admin"
     address: "0.0.0.0/0"
     method: "scram-sha-256"
-  
+
   # Reject specific user from connecting
   - type: "host"
     database: "all"
     user: "guest"
     address: "0.0.0.0/0"
     method: "reject"
-  
+
   # Allow local connections without password for specific user
   - type: "local"
     database: "all"
@@ -257,6 +260,7 @@ See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/auth-
 **Common Use Cases:**
 
 **Restrict access to specific network:**
+
 ```yaml
 pg_hba_config:
   - type: "host"
@@ -272,6 +276,7 @@ pg_hba_config:
 ```
 
 **Require SSL for all external connections:**
+
 ```yaml
 pg_hba_config:
   - type: "hostssl"
@@ -287,6 +292,7 @@ pg_hba_config:
 ```
 
 **Allow passwordless local backup user:**
+
 ```yaml
 pg_hba_config:
   - type: "local"
@@ -300,6 +306,7 @@ pg_hba_config:
 If you're currently using `init_commands` to modify PostgreSQL configuration, you can migrate to the new declarative approach:
 
 **Old way (still works):**
+
 ```yaml
 init_commands:
   - 'sed -i -e "/log_statement =/ s/= .*/= '\''all'\''/" /data/postgres/postgresql.conf'
@@ -307,6 +314,7 @@ init_commands:
 ```
 
 **New way (recommended):**
+
 ```yaml
 postgresql_config:
   log_statement: "all"
