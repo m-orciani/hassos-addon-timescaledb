@@ -1,4 +1,4 @@
-ARG BUILD_FROM=ghcr.io/hassio-addons/base/aarch64:17.2.1
+ARG BUILD_FROM=ghcr.io/hassio-addons/base/aarch64:17.2.5
 ARG BUILD_ARCH=aarch64
 
 ARG ALPINE_VERSION=3.21
@@ -7,21 +7,20 @@ ARG ALPINE_VERSION=3.21
 # These images are all prebuild, otherwise building the docker images takes waaaay to long
 # Where possible, we just take the latest version from the Alpine repository, so it's
 # possible we won't mention the latest version here.
-FROM timescale/timescaledb:2.18.2-pg15                                          AS timescale-pg15   
-FROM timescale/timescaledb:2.18.2-pg16                                          AS timescale-pg16   
-FROM timescale/timescaledb:2.18.2-pg17                                          AS timescale-pg17   
+FROM timescale/timescaledb:2.22.1-pg16                                          AS timescale-pg16
+FROM timescale/timescaledb:2.22.1-pg17                                          AS timescale-pg17
+
 # hadolint ignore=DL3007
 FROM ghcr.io/expaso/timescaledb/dependency/timescaledb-tools:latest                    AS timescaledb-tools
-FROM ghcr.io/expaso/timescaledb/dependency/pgagent-pg16:REL-4_2_2                      AS pgagent-pg16
-FROM ghcr.io/expaso/timescaledb/dependency/pgagent-pg17:REL-4_2_2                      AS pgagent-pg17
-FROM ghcr.io/expaso/timescaledb/dependency/postgis-pg15:3.5.1                          AS postgis-pg15
-FROM ghcr.io/expaso/timescaledb/dependency/postgis-pg16:3.5.1                          AS postgis-pg16
-FROM ghcr.io/expaso/timescaledb/dependency/postgis-pg17:3.5.1                          AS postgis-pg17
-FROM ghcr.io/expaso/timescaledb/dependency/timescaledb-toolkit-pg16:1.19.0             AS timescaledb-toolkit-pg16
-FROM ghcr.io/expaso/timescaledb/dependency/timescaledb-toolkit-pg17:1.19.0             AS timescaledb-toolkit-pg17
+FROM ghcr.io/expaso/timescaledb/dependency/pgagent-pg16:REL-4_2_3                      AS pgagent-pg16
+FROM ghcr.io/expaso/timescaledb/dependency/pgagent-pg17:REL-4_2_3                      AS pgagent-pg17
+FROM ghcr.io/expaso/timescaledb/dependency/postgis-pg16:3.6.0                          AS postgis-pg16
+FROM ghcr.io/expaso/timescaledb/dependency/postgis-pg17:3.6.0                          AS postgis-pg17
+FROM ghcr.io/expaso/timescaledb/dependency/timescaledb-toolkit-pg16:1.21.0             AS timescaledb-toolkit-pg16
+FROM ghcr.io/expaso/timescaledb/dependency/timescaledb-toolkit-pg17:1.21.0             AS timescaledb-toolkit-pg17
 FROM ghcr.io/expaso/timescaledb/dependency/postgresql-extension-system-stat-pg16:3.2   AS system-stat-pg16
 FROM ghcr.io/expaso/timescaledb/dependency/postgresql-extension-system-stat-pg17:3.2   AS system-stat-pg17
-FROM ghcr.io/expaso/timescaledb/dependency/pgvector-pg17:0.8.0                         AS pgvector-pg17
+FROM ghcr.io/expaso/timescaledb/dependency/pgvector-pg17:0.8.1                         AS pgvector-pg17
 
 
 ###########################################
@@ -47,19 +46,6 @@ RUN --mount=type=cache,id=apk-${TARGETARCH}-${TARGETVARIANT},sharing=locked,targ
 ###########################################
 # Install all sub-components
 ###########################################
-
-# -----------------------------------------
-# PostgreSql 15 (old)
-# -----------------------------------------
-# hadolint ignore=DL3018
-RUN --mount=type=cache,id=apk-${TARGETARCH}-${TARGETVARIANT},sharing=locked,target=/var/cache/apk \
-    set -ex \
-    && apk add \
-        postgresql15-jit \
-        postgresql15 \
-        postgresql15-dev \
-        postgresql15-contrib-jit \
-        postgresql15-contrib
 
 # Make sure pg_config follows the most current version
 RUN rm /usr/bin/pg_config \
@@ -102,19 +88,6 @@ RUN mkdir -p /run/postgresql \
 	&& chown -R postgres:postgres /run/postgresql \
     && mkdir -p /run/postgresql/extensions \
 	&& chown -R postgres:postgres /run/postgresql/extensions
-
-# -----------------------------------------
-# Extension Postgis pg-15 (old)
-# -----------------------------------------
-
-# Postgis + Postgis-Raster
-COPY --from=postgis-pg15 --link /usr/local/lib/postgresql/postgis* /usr/lib/postgresql15/
-
-COPY --from=postgis-pg15 --link /usr/local/lib/postgresql/bitcode/postgis-3/* /usr/lib/postgresql15/bitcode/postgis-3/
-COPY --from=postgis-pg15 --link /usr/local/lib/postgresql/bitcode/postgis_raster-3/* /usr/lib/postgresql15/bitcode/postgis_raster-3/
-
-COPY --from=postgis-pg15 --link /usr/local/share/postgresql/contrib/postgis* /usr/share/postgresql15/contrib/
-COPY --from=postgis-pg15 --link /usr/local/share/postgresql/extension/postgis* /usr/share/postgresql15/extension/
 
 # -----------------------------------------
 # Extension Postgis pg-16 (old)
@@ -170,16 +143,6 @@ COPY --from=postgis-pg17 --link /usr/local/lib/postgresql/bitcode/postgis_raster
 
 COPY --from=postgis-pg17 --link /usr/local/share/postgresql/contrib/postgis* /usr/share/postgresql17/contrib/
 COPY --from=postgis-pg17 --link /usr/local/share/postgresql/extension/postgis* /usr/share/postgresql17/extension/
-
-# -----------------------------------------
-# Extension Timescale pg-15 (old)
-# -----------------------------------------
-# Copy the new timescale version to the old postgresql version
-COPY --from=timescale-pg15 --link /usr/local/lib/postgresql/timescaledb*.so /usr/lib/postgresql15/
-COPY --from=timescale-pg15 --link /usr/local/share/postgresql/extension/timescaledb* /usr/share/postgresql15/extension/
-# FIXUP Copy libssl over from the old addon. This version is needed in alpine 3.19.
-COPY --from=timescale-pg15 --link /lib/libssl.so.1.* /lib/
-COPY --from=timescale-pg15 --link /lib/libcrypto.so.1.* /lib/
 
 # -----------------------------------------
 # Extension Timescale pg-16 (old)

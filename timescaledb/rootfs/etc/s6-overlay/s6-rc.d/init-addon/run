@@ -26,8 +26,8 @@ initializeDataDirectory () {
 	mkdir -p ${POSTGRES_DATA}
 	applyPermissions
 	su - postgres -c "initdb -D ${POSTGRES_DATA}"
-	# Set timescaledb as being enabled in the postgres config file.
-	sed -r -i "s/[#]*\s*(shared_preload_libraries)\s*=\s*'(.*)'/\1 = 'timescaledb,\2'/;s/,'/'/" ${POSTGRES_DATA}/postgresql.conf
+	# Set timescaledb and pg_stat_statements as being enabled in the postgres config file.
+	sed -r -i "s/[#]*\s*(shared_preload_libraries)\s*=\s*'(.*)'/\1 = 'timescaledb,pg_stat_statements,\2'/;s/,'''/'/;s/,'/'/" ${POSTGRES_DATA}/postgresql.conf
 	
 	# Set Password protect IPv4 hosts by default
 	echo "host    all             all             0.0.0.0/0               md5" >> ${POSTGRES_DATA}/pg_hba.conf
@@ -231,6 +231,15 @@ fi
 
 bashio::log.info "done"
 
+
+# Ensure pg_stat_statements is in shared_preload_libraries for existing installations
+if bashio::var.false "${NEW_INSTALL}"; then
+	if ! grep -q "shared_preload_libraries.*pg_stat_statements" ${POSTGRES_DATA}/postgresql.conf; then
+		bashio::log.info "Adding pg_stat_statements to shared_preload_libraries.."
+		sed -r -i "s/(shared_preload_libraries\s*=\s*'[^']*)(timescaledb)([^']*')/\1\2,pg_stat_statements\3/" ${POSTGRES_DATA}/postgresql.conf
+		bashio::log.info "done"
+	fi
+fi
 
 # Patch telemetry level
 if bashio::config.has_value 'timescaledb.telemetry'; then

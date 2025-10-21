@@ -50,8 +50,8 @@ RUN --mount=type=cache,id=apk-${TARGETARCH}-${TARGETVARIANT},sharing=locked,targ
 				build-base \
                 libxml2-dev \
                 protobuf-c-dev \
-                clang15 \
-                llvm15 \
+                clang19 \
+                llvm19 \
     && apk add --virtual .community-build-deps \
                 geos-dev \
                 proj-dev \

@@ -23,8 +23,8 @@ RUN --mount=type=cache,id=apk-${TARGETARCH}-${TARGETVARIANT},sharing=locked,targ
 				build-base \
 				boost-dev \
 				openldap-dev \
-                clang15 \
-                llvm15 \
+                clang19 \
+                llvm19 \
     && git clone https://github.com/EnterpriseDB/system_stats.git /build/system-stats \
         && cd /build/system-stats \
         && git checkout v${VERSION}

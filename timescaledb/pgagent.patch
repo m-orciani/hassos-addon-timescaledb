@@ -6,8 +6,8 @@ index 916d891..163e7f4 100644
  
  	// Cleanup
  	ExecuteVoid("RESET ALL");
--	m_lastError.empty();
-+	bool _ = m_lastError.empty();
+-	m_lastError.clear();
++	m_lastError = "";
  	m_inUse = false;
  
  	LogMessage((
