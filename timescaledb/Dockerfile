@@ -240,6 +240,11 @@ RUN date +%Y%m%d%H%M%S > /build-timestamp
 COPY --link rootfs /rootfs
 RUN rsync -LKavz /rootfs/ / && rm -rf /rootfs
 
+# Make backup and restore scripts executable
+RUN chmod +x /usr/share/timescaledb/backup_pre.sh \
+    && chmod +x /usr/share/timescaledb/backup_post.sh \
+    && chmod +x /usr/share/timescaledb/restore_from_backup.sh
+
 WORKDIR /
 
 # Build arugments

@@ -7,10 +7,14 @@ declare POSTGRES_DATA
 declare VERSION_FILE
 declare NEW_INSTALL
 declare BUILD_TIMESTAMP
+declare BACKUP_FILE
+declare RESTORE_MODE
 
 POSTGRES_DATA=/data/postgres
 VERSION_FILE=/data/version
-NEW_INSTALL=false;
+BACKUP_FILE=/data/backup_db.sql
+NEW_INSTALL=false
+RESTORE_MODE=false
 BUILD_TIMESTAMP="$(cat /build-timestamp)"
 
 # Applies permission to the data directory for the postgres user
@@ -168,10 +172,32 @@ chown postgres:postgres /tmp/pg_stat_tmp
 if ! bashio::fs.directory_exists "${POSTGRES_DATA}"; then
     bashio::log.info "Detected a fresh installation! Welcome! We're setting things up for you.."
     NEW_INSTALL=true
+    
+    # Check if we have a backup to restore from
+    if [[ -f "${BACKUP_FILE}" ]]; then
+        bashio::log.notice "Found backup SQL file. Will restore after initialization."
+        RESTORE_MODE=true
+    fi
 else
     touch ${VERSION_FILE}
 	# Always re-apply permissions, because they seem to be reset after a snapshot restore
 	applyPermissions
+	
+	# Check if database is corrupted and we have a backup
+	if [[ -f "${BACKUP_FILE}" ]]; then
+	    # Check if PG_VERSION exists and is valid
+	    if [[ ! -f "${POSTGRES_DATA}/PG_VERSION" ]]; then
+	        bashio::log.warning "Database appears corrupted (missing PG_VERSION). Backup SQL found."
+	        bashio::log.warning "Will attempt to restore from backup..."
+	        RESTORE_MODE=true
+	        NEW_INSTALL=true
+	        # Move corrupted data aside
+	        if [[ -d "${POSTGRES_DATA}" ]]; then
+	            bashio::log.info "Moving corrupted database aside..."
+	            mv "${POSTGRES_DATA}" "${POSTGRES_DATA}.corrupted.$(date +%Y%m%d_%H%M%S)"
+	        fi
+	    fi
+	fi
 fi
 
 # Initialize for new installs
@@ -179,6 +205,23 @@ if bashio::var.true "${NEW_INSTALL}"; then
 	touch /data/firstrun
 	echo "${BUILD_TIMESTAMP}" > ${VERSION_FILE}
 	initializeDataDirectory
+	
+	# Restore from backup if available
+	if bashio::var.true "${RESTORE_MODE}"; then
+	    bashio::log.notice "Restore mode enabled. Loading restore script..."
+	    source /usr/share/timescaledb/restore_from_backup.sh
+	    
+	    if restoreFromBackup; then
+	        bashio::log.notice "Database restored successfully from backup SQL file!"
+	        # Mark that we've restored, so postgres startup can skip firstrun setup
+	        rm -f /data/firstrun
+	    else
+	        bashio::log.error "Failed to restore from backup. Starting with fresh database."
+	        bashio::log.error "The backup file has been preserved at ${BACKUP_FILE}"
+	        bashio::log.error "You may attempt manual restoration if needed."
+	        # Keep the backup file for manual recovery
+	    fi
+	fi
 else
 
 	# Check if we need to restore again.
