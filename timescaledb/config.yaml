@@ -60,7 +60,7 @@ schema:
     - str
   retry_upgrade: bool?
   postgresql_config:
-    match(^[a-z_]+$)?: str
+    match(^[a-z_]+$)?: str?
   pg_hba_config:
     - type: list(local|host|hostssl|hostnossl)?
       database: str?
