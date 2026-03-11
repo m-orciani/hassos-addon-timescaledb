@@ -1,6 +1,6 @@
 ---
 name: TimescaleDBmax
-version: dev-max v.1
+version: dev-max v.1.1
 slug: timescaledbmax
 description: "An open-source database built on PostgreSQL for
   analyzing time-series data with the power and convenience of SQL"
