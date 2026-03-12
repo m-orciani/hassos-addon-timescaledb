@@ -69,4 +69,4 @@ schema:
       address: str?
       method: list(trust|reject|md5|password|scram-sha-256|gss|sspi|ident|peer|pam|ldap|radius|cert)?
       options: str?
-image: ghcr.io/expaso/timescaledb/{arch}
+image: ghcr.io/m-orciani/timescaledb/{arch}
