@@ -13,6 +13,7 @@ arch:
   - armv7
   - i386
 startup: system
+boot: auto
 init: false
 tmpfs: true
 map:
@@ -69,4 +70,3 @@ schema:
       address: str?
       method: list(trust|reject|md5|password|scram-sha-256|gss|sspi|ident|peer|pam|ldap|radius|cert)?
       options: str?
-image: ghcr.io/m-orciani/timescaledb/{arch}
